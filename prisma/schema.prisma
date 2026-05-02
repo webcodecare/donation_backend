@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////
+
+enum Role {
+  USER
+  ADMIN
+  VOLUNTEER
+}
+
+enum CampaignCategory {
+  medical
+  emergency
+  education
+  disaster
+  family
+  food
+  shelter
+  orphan
+  women
+  community
+}
+
+enum CampaignStatus {
+  pending
+  active
+  verified
+  closed
+}
+
+enum DonationStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum ItemCategory {
+  clothes
+  food
+  books
+  furniture
+  medicine
+  electronics
+  other
+}
+
+enum ItemCondition {
+  new
+  used
+  excellent
+  fair
+}
+
+enum PickupStatus {
+  pending
+  assigned
+  picked_up
+  delivered
+  cancelled
+}
+
+//////////////////////////////////////////////////////
+// USER
+//////////////////////////////////////////////////////
+
+model User {
+  id       String  @id @default(cuid())
+  name     String
+  email    String  @unique
+  password String
+  phone    String?
+  avatar   String?
+
+  role Role @default(USER)
+
+  campaigns     Campaign[]
+  donations     Donation[]
+  itemDonations ItemDonation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////////
+// CAMPAIGN (MAIN MODEL)
+//////////////////////////////////////////////////////
+
+model Campaign {
+  id String @id @default(cuid())
+
+  title           String
+  slug            String           @unique
+  description     String
+  story           String
+  category        CampaignCategory
+  status          CampaignStatus   @default(pending)
+  goalAmount      Float
+  collectedAmount Float            @default(0)
+  image           String?
+  startDate       DateTime         @default(now())
+  endDate         DateTime
+  contributor     Int              @default(0)
+  featured        Boolean          @default(false)
+
+  creatorId String
+  creator   User @relation(fields: [creatorId], references: [id])
+
+  tags          String[] @default([])
+  acceptedItems String[]
+  updates       Json?
+
+  donations     Donation[]
+  itemDonations ItemDonation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, status])
+  @@index([creatorId])
+  @@index([slug])
+}
+
+//////////////////////////////////////////////////////
+// DONATION
+//////////////////////////////////////////////////////
+
+model Donation {
+  id String @id @default(cuid())
+
+  amount Float
+
+  transactionId String? @unique // ✅ nullable + unique
+
+  donorName  String
+  donorEmail String?
+
+  anonymous Boolean @default(false)
+
+  status DonationStatus @default(pending)
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  donorId String?
+  donor   User? @relation(fields: [donorId], references: [id])
+
+  payment Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt 
+}
+
+//////////////////////////////////////////////////////
+// PAYMENT (NEW)
+//////////////////////////////////////////////////////
+
+model Payment {
+  id              String   @id @default(cuid())
+  amount          Int      // in cents (e.g. 1000 = $10.00)
+  currency        String   @default("usd")
+  stripePaymentId String   @unique
+  status          String   @default("pending")
+
+  // 🔥 Link to Donation (1:1)
+  donationId String   @unique
+  donation   Donation @relation(fields: [donationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////////
+// ITEM DONATION (OPTIONAL FEATURE)
+//////////////////////////////////////////////////////
+
+model ItemDonation {
+  id String @id @default(cuid())
+
+  itemName  String?
+  category  ItemCategory
+  quantity  Int
+  condition ItemCondition
+
+  description String?
+  photos      String[]
+
+  pickupAddress String
+  preferredDate DateTime
+  preferredTime String
+
+  contactName  String
+  contactPhone String
+
+  status PickupStatus @default(pending)
+
+  donorId String
+  donor   User @relation(fields: [donorId], references: [id])
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////////
+// SITE SETTINGS
+//////////////////////////////////////////////////////
+
+model SiteSetting {
+  id String @id @default(cuid())
+
+  key   String @unique
+  value String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
