@@ -6,9 +6,18 @@ import { buildMeta, parsePagination } from "../../utils/paginate";
 import { CampaignService } from "./campain.service";
 
 const createCampaign = catchAsync(async (req, res) => {
-  const file = req.file;
+  const files = req.files as
+    | { image?: Express.Multer.File[]; icons?: Express.Multer.File[] }
+    | undefined;
+  const imageFile = files?.image?.[0];
+  const iconFiles = files?.icons ?? [];
   const userid = req?.user?.id;
-  const result = await CampaignService.createCampaign(userid, file, req.body);
+  const result = await CampaignService.createCampaign(
+    userid,
+    imageFile,
+    iconFiles,
+    req.body
+  );
 
   sendResponse(res, {
     success: true,
@@ -46,9 +55,18 @@ const getCampaignById = catchAsync(async (req, res) => {
 
 const updateCampaign = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const file = req.file;
+  const files = req.files as
+    | { image?: Express.Multer.File[]; icons?: Express.Multer.File[] }
+    | undefined;
+  const imageFile = files?.image?.[0];
+  const iconFiles = files?.icons ?? [];
 
-  const result = await CampaignService.updateCampaign(id as string, file, req.body);
+  const result = await CampaignService.updateCampaign(
+    id as string,
+    imageFile,
+    iconFiles,
+    req.body
+  );
 
   sendResponse(res, {
     success: true,

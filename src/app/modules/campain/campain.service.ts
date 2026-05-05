@@ -34,9 +34,20 @@ const parseTranslations = (raw: unknown): CampaignTranslationInput[] => {
     }));
 };
 
+const uploadFiles = async (files: Express.Multer.File[]): Promise<string[]> => {
+  const urls: string[] = [];
+  for (const file of files) {
+    const name = Date.now() + "-" + file.originalname.replace(/\s/g, "-");
+    const result: any = await sendImageToCloudinary(file.path, name);
+    urls.push(result.secure_url);
+  }
+  return urls;
+};
+
 const createCampaign = async (
   id: string,
   file: Express.Multer.File | undefined,
+  iconFiles: Express.Multer.File[],
   payload: any
 ) => {
   if (!file) {
@@ -45,6 +56,8 @@ const createCampaign = async (
 
   const imageName = Date.now() + "-" + file.originalname.replace(/\s/g, "-");
   const uploadResult: any = await sendImageToCloudinary(file.path, imageName);
+
+  const icons = await uploadFiles(iconFiles);
 
   const tags =
     typeof payload.tags === "string" ? JSON.parse(payload.tags) : payload.tags || [];
@@ -69,6 +82,7 @@ const createCampaign = async (
       collectedAmount: 0,
       endDate: new Date(payload.endDate),
       image: uploadResult.secure_url,
+      icons,
       featured: payload.featured === "true" || payload.featured === true,
       tags,
       creatorId: id,
@@ -145,6 +159,7 @@ const getCampaignById = async (id: string) => {
 const updateCampaign = async (
   id: string,
   file: Express.Multer.File | undefined,
+  iconFiles: Express.Multer.File[],
   payload: any
 ) => {
   const existing = await prisma.campaign.findUnique({ where: { id } });
@@ -157,6 +172,25 @@ const updateCampaign = async (
     const uploadResult: any = await sendImageToCloudinary(file.path, imageName);
     imageUrl = uploadResult.secure_url;
   }
+
+  const newIconUrls = await uploadFiles(iconFiles);
+
+  // Allow keeping previously-uploaded icon URLs via payload.existingIcons
+  let keepIcons: string[] = existing.icons;
+  if (payload.existingIcons !== undefined) {
+    try {
+      const parsed =
+        typeof payload.existingIcons === "string"
+          ? JSON.parse(payload.existingIcons)
+          : payload.existingIcons;
+      keepIcons = Array.isArray(parsed)
+        ? parsed.filter((s: unknown) => typeof s === "string")
+        : [];
+    } catch {
+      keepIcons = [];
+    }
+  }
+  const icons = [...keepIcons, ...newIconUrls];
 
   const tags =
     typeof payload.tags === "string"
@@ -184,6 +218,7 @@ const updateCampaign = async (
         featured: payload.featured === "true" || payload.featured === true,
         tags,
         acceptedItems,
+        icons,
         ...(file && { image: imageUrl }),
       },
     });

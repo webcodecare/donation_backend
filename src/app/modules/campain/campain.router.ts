@@ -10,7 +10,10 @@ const router = express.Router();
 router.post(
   "/",
   auth(Role.ADMIN,Role.USER),
-  upload.single("image"),
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "icons", maxCount: 20 },
+  ]),
   (req: Request, res: Response, next: NextFunction) => {
     try {
       if (req.body.data) {
@@ -30,7 +33,11 @@ router.get("/all", CampaignController.getAllCampaigns);
 router.get("/:id", CampaignController.getCampaignById);
 
 // UPDATE
-router.put("/:id", upload.single("image"),
+router.put("/:id",
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "icons", maxCount: 20 },
+  ]),
   (req: Request, res: Response, next: NextFunction) => {
     try {
       if (req.body.data) {

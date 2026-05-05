@@ -115,6 +115,7 @@ model Campaign {
   goalAmount      Float
   collectedAmount Float            @default(0)
   image           String?
+  icons           String[]         @default([])
   startDate       DateTime         @default(now())
   endDate         DateTime
   contributor     Int              @default(0)
