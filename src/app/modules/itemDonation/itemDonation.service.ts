@@ -11,6 +11,24 @@ const createItemDonation = async (
   files: Express.Multer.File[],
   payload: ItemDonation
 ) => {
+  // Block item donations to completed (or closed) campaigns
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: payload.campaignId },
+    select: { id: true, status: true },
+  });
+  if (!campaign) {
+    throw new AppError(httpStatus.NOT_FOUND, "Campaign not found");
+  }
+  if (campaign.status === "completed") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This campaign has been successfully completed and is no longer accepting item donations."
+    );
+  }
+  if (campaign.status === "closed") {
+    throw new AppError(httpStatus.BAD_REQUEST, "This campaign is closed.");
+  }
+
   const uploadedImages: string[] = [];
 
   // upload images
@@ -59,40 +77,72 @@ const createItemDonation = async (
 export const ItemDonationService = {
     createItemDonation,
 };
-const getAllItemDonations = async() => { 
-    const result = await prisma.itemDonation.findMany(
-        {
-            include:{
-                campaign:true,
-                donor:true
-            }
-        }
-    )
-    return result
-}
-const getMyDonations = async (id: string) => {
-  const result = await prisma.itemDonation.findMany({
-    where: {
-      donorId: id,
-    },
-    include: {
-      campaign: {
-        select: {
-          id: true,
-          title: true,
-          image: true,
-          category: true,
-          status: true,
-          slug: true,
+const getAllItemDonations = async (
+  pagination: { page: number; limit: number; skip: number; search: string }
+) => {
+  const { page, limit, skip, search } = pagination;
+  const where: any = {};
+  if (search) {
+    where.OR = [
+      { contactName: { contains: search, mode: "insensitive" as const } },
+      { contactPhone: { contains: search, mode: "insensitive" as const } },
+      { description: { contains: search, mode: "insensitive" as const } },
+      { itemName: { contains: search, mode: "insensitive" as const } },
+      { campaign: { title: { contains: search, mode: "insensitive" as const } } },
+    ];
+  }
+
+  const [data, total] = await prisma.$transaction([
+    prisma.itemDonation.findMany({
+      where,
+      include: { campaign: true, donor: true },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.itemDonation.count({ where }),
+  ]);
+
+  return { data, meta: { page, limit, total } };
+};
+
+const getMyDonations = async (
+  userId: string,
+  pagination: { page: number; limit: number; skip: number; search: string }
+) => {
+  const { page, limit, skip, search } = pagination;
+  const where: any = { donorId: userId };
+  if (search) {
+    where.OR = [
+      { itemName: { contains: search, mode: "insensitive" as const } },
+      { description: { contains: search, mode: "insensitive" as const } },
+      { campaign: { title: { contains: search, mode: "insensitive" as const } } },
+    ];
+  }
+
+  const [data, total] = await prisma.$transaction([
+    prisma.itemDonation.findMany({
+      where,
+      include: {
+        campaign: {
+          select: {
+            id: true,
+            title: true,
+            image: true,
+            category: true,
+            status: true,
+            slug: true,
+          },
         },
       },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.itemDonation.count({ where }),
+  ]);
 
-  return result;
+  return { data, meta: { page, limit, total } };
 };
 
 

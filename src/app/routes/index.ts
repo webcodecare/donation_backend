@@ -1,11 +1,13 @@
 import express from 'express';
 import { AuthRoutes } from '../modules/auth/auth.routes';
 import { userRouter } from '../modules/user/user.router';
-
 import { ItemDonation } from '../modules/itemDonation/itemDonation.router';
 import { donationRouter } from '../modules/donation/donation.router';
 import { paymentRouter } from '../modules/payment/payment.route';
 import { campaignRouter } from '../modules/campain/campain.router';
+import { BannerRouter } from '../modules/banner/banner.router';
+import { CharityRouter } from '../modules/charity/charity.router';
+import { CharityInquiryRouter } from '../modules/charityInquiry/charityInquiry.router';
 
 
 const router = express.Router();
@@ -21,7 +23,7 @@ const routes: Route[] = [
     route: AuthRoutes,
   },
   {
-    path: '/',
+    path: '/users',
     route: userRouter,
   },
   {
@@ -39,6 +41,18 @@ const routes: Route[] = [
   {
     path: '/payment',
     route: paymentRouter,
+  },
+  {
+    path: '/banner',
+    route: BannerRouter,
+  },
+  {
+    path: '/charity',
+    route: CharityRouter,
+  },
+  {
+    path: '/charity-inquiry',
+    route: CharityInquiryRouter,
   },
 ];
 routes.forEach((route) => {

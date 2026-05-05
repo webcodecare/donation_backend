@@ -7,6 +7,7 @@ import notFound from './app/middlewares/notFound';
 import router from './app/routes';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import { seedAdmin } from './app/middlewares/seedAdmin';
+import attachLang from './app/middlewares/attachLang';
 
 const app = express();
 
@@ -24,8 +25,12 @@ app.use(
     credentials: true,
   }),
 );
-// sheeds 
+// sheeds
 seedAdmin();
+
+// attach selected language to req.lang (?lang= or Accept-Language)
+app.use(attachLang);
+
 // application routes
 app.use('/api', router);
 

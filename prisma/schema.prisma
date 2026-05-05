@@ -35,6 +35,7 @@ enum CampaignStatus {
   active
   verified
   closed
+  completed
 }
 
 enum DonationStatus {
@@ -67,6 +68,13 @@ enum PickupStatus {
   picked_up
   delivered
   cancelled
+}
+
+enum InquiryStatus {
+  pending
+  responded
+  resolved
+  archived
 }
 
 //////////////////////////////////////////////////////
@@ -119,8 +127,15 @@ model Campaign {
   acceptedItems String[]
   updates       Json?
 
+  // Completion fields — populated when admin marks campaign as completed
+  successStory  String?
+  successImages String[] @default([])
+  completedAt   DateTime?
+
   donations     Donation[]
   itemDonations ItemDonation[]
+
+  translations CampaignTranslation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -128,6 +143,24 @@ model Campaign {
   @@index([category, status])
   @@index([creatorId])
   @@index([slug])
+}
+
+model CampaignTranslation {
+  id           String  @id @default(cuid())
+  campaignId   String
+  lang         String
+  title        String
+  description  String
+  story        String
+  successStory String?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([campaignId, lang])
+  @@index([lang])
 }
 
 //////////////////////////////////////////////////////
@@ -213,16 +246,95 @@ model ItemDonation {
   updatedAt DateTime @updatedAt
 }
 
-//////////////////////////////////////////////////////
-// SITE SETTINGS
-//////////////////////////////////////////////////////
 
-model SiteSetting {
-  id String @id @default(cuid())
+model Banner {
+  id          String   @id @default(cuid())
+  short_title String?
+  title       String
+  description String?
+  photo       String
 
-  key   String @unique
-  value String
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+
+  translations BannerTranslation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BannerTranslation {
+  id          String  @id @default(cuid())
+  bannerId    String
+  lang        String
+  short_title String?
+  title       String
+  description String?
+
+  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([bannerId, lang])
+  @@index([lang])
+}
+
+model Charity {
+  id          String   @id @default(cuid())
+  active      Boolean  @default(true)
+  name        String
+  logo        String
+  banner      String?
+  verified    Boolean  @default(false)
+  mission     String?
+  description String
+  website     String?
+  address     String?
+  email       String?
+  phone       String?
+
+  translations CharityTranslation[]
+  inquiries    CharityInquiry[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CharityInquiry {
+  id        String         @id @default(cuid())
+  charityId String
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    InquiryStatus  @default(pending)
+
+  charity Charity @relation(fields: [charityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([charityId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model CharityTranslation {
+  id          String  @id @default(cuid())
+  charityId   String
+  lang        String
+  name        String
+  mission     String?
+  description String
+  address     String?
+
+  charity Charity @relation(fields: [charityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([charityId, lang])
+  @@index([lang])
 }

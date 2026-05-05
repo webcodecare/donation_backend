@@ -1,9 +1,10 @@
 import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
+import { buildMeta, parsePagination } from "../../utils/paginate";
 import { DonationService } from "./donation.service";
 
-// ✅ Create donation + Stripe
+// Create donation + Stripe
 const createDonation = catchAsync(async (req, res) => {
   const result = await DonationService.createDonation(req.body);
 
@@ -15,22 +16,23 @@ const createDonation = catchAsync(async (req, res) => {
   });
 });
 
-// ✅ Get all donations (admin)
+// Get all donations (admin) — paginated
 const getAllDonations = catchAsync(async (req, res) => {
-  const result = await DonationService.getAllDonations();
+  const pagination = parsePagination(req.query);
+  const { data, meta } = await DonationService.getAllDonations(pagination);
 
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
     message: "All donations fetched",
-    data: result,
+    meta: buildMeta(meta.page, meta.limit, meta.total),
+    data,
   });
 });
 
-// ✅ Get single donation
+// Get single donation
 const getSingleDonation = catchAsync(async (req, res) => {
   const { id } = req.params;
-
   const result = await DonationService.getSingleDonation(id as string);
 
   sendResponse(res, {
@@ -41,17 +43,18 @@ const getSingleDonation = catchAsync(async (req, res) => {
   });
 });
 
-// ✅ My donations
+// My donations — paginated
 const getMyDonations = catchAsync(async (req, res) => {
   const userId = req.user.id;
-
-  const result = await DonationService.getMyDonations(userId);
+  const pagination = parsePagination(req.query);
+  const { data, meta } = await DonationService.getMyDonations(userId, pagination);
 
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
     message: "all donation showing successfully",
-    data: result,
+    meta: buildMeta(meta.page, meta.limit, meta.total),
+    data,
   });
 });
 

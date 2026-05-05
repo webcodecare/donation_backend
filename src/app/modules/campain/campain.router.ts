@@ -42,6 +42,24 @@ router.put("/:id", upload.single("image"),
     }
   }, CampaignController.updateCampaign);
 
+// COMPLETE — admin marks campaign as successful with story + image gallery
+router.patch(
+  "/:id/complete",
+  auth(Role.ADMIN),
+  upload.array("successImages", 10),
+  (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (req.body.data) {
+        req.body = JSON.parse(req.body.data);
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  },
+  CampaignController.completeCampaign
+);
+
 // DELETE
 router.delete("/:id", CampaignController.deleteCampaign);
 

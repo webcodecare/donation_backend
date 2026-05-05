@@ -14,7 +14,7 @@ router.post(
 
 // Get all donations (admin)
 router.get(
-  "/",
+  "/all",
   auth(Role.ADMIN),
   DonationController.getAllDonations
 );
