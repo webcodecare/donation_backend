@@ -5,7 +5,7 @@ import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
 
 const stripe = new Stripe(config.stripe_secret_key!, {
-  apiVersion: "2024-06-20",
+  apiVersion: "2025-08-27.basil",
 });
 
 // ✅ Create donation + Stripe session

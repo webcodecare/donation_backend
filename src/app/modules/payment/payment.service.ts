@@ -3,7 +3,7 @@ import prisma from "../../utils/prisma";
 import config from "../../config";
 
 const stripe = new Stripe(config.stripe_secret_key!, {
-  apiVersion: "2024-06-20",
+  apiVersion: "2025-08-27.basil",
 });
 
 // ✅ Create checkout session

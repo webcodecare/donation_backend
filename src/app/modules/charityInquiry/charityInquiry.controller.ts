@@ -35,7 +35,7 @@ const getInquiries = catchAsync(async (req, res) => {
 });
 
 const getInquiryById = catchAsync(async (req, res) => {
-  const result = await CharityInquiryService.getInquiryById(req.params.id);
+  const result = await CharityInquiryService.getInquiryById(String(req.params.id));
 
   sendResponse(res, {
     success: true,
@@ -47,7 +47,7 @@ const getInquiryById = catchAsync(async (req, res) => {
 
 const updateInquiryStatus = catchAsync(async (req, res) => {
   const result = await CharityInquiryService.updateInquiryStatus(
-    req.params.id,
+    String(req.params.id),
     req.body?.status
   );
 
@@ -60,7 +60,7 @@ const updateInquiryStatus = catchAsync(async (req, res) => {
 });
 
 const deleteInquiry = catchAsync(async (req, res) => {
-  await CharityInquiryService.deleteInquiry(req.params.id);
+  await CharityInquiryService.deleteInquiry(String(req.params.id));
 
   sendResponse(res, {
     success: true,

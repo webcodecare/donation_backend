@@ -19,7 +19,7 @@ const GetAllUsers = catchAsync(async (req: Request, res: Response) => {
 });
 
 const GetSingleUser = catchAsync(async (req: Request, res: Response) => {
-  const id = req.params?.id;
+  const id = String(req.params?.id);
   const result = await UserService.GetSingleUser(id);
   sendResponse(res, {
     success: true,
@@ -30,7 +30,7 @@ const GetSingleUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const DeleteUser = catchAsync(async (req: Request, res: Response) => {
-  const id = req.params?.id;
+  const id = String(req.params?.id);
   await UserService.DeleteUser(id);
   sendResponse(res, {
     success: true,

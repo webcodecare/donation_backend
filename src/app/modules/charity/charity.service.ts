@@ -131,8 +131,8 @@ const updateCharity = async (id: string, files: any, payload: any) => {
   const logoFile = files?.logo?.[0];
   const bannerFile = files?.banner?.[0];
 
-  let logoUrl;
-  let bannerUrl;
+  let logoUrl: string | undefined;
+  let bannerUrl: string | undefined;
 
   if (logoFile) {
     const logoName = Date.now() + "-" + logoFile.originalname.replace(/\s/g, "-");
