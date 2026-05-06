@@ -3,6 +3,10 @@ import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
 import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 import { isLang, type Lang } from "../../config/i18n";
+import { CampaignCategory, Prisma } from "@prisma/client";
+
+const isCampaignCategory = (v: string): v is CampaignCategory =>
+  (Object.values(CampaignCategory) as string[]).includes(v);
 
 type CampaignTranslationInput = {
   lang: Lang;
@@ -104,19 +108,47 @@ const createCampaign = async (
 };
 
 const getAllCampaigns = async (
-  pagination: { page: number; limit: number; skip: number; search: string }
+  pagination: { page: number; limit: number; skip: number; search: string },
+  filters: { category?: string; sortBy?: string } = {}
 ) => {
   const { page, limit, skip, search } = pagination;
-  const where = search
-    ? {
-        OR: [
-          { title: { contains: search, mode: "insensitive" as const } },
-          { description: { contains: search, mode: "insensitive" as const } },
-          { story: { contains: search, mode: "insensitive" as const } },
-          { slug: { contains: search, mode: "insensitive" as const } },
-        ],
-      }
-    : {};
+  const { category, sortBy } = filters;
+
+  const conditions: Prisma.CampaignWhereInput[] = [];
+
+  if (search) {
+    conditions.push({
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { story: { contains: search, mode: "insensitive" } },
+        { slug: { contains: search, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  if (category && isCampaignCategory(category)) {
+    conditions.push({ category });
+  }
+
+  const where: Prisma.CampaignWhereInput =
+    conditions.length > 0 ? { AND: conditions } : {};
+
+  let orderBy: Prisma.CampaignOrderByWithRelationInput = { createdAt: "desc" };
+  switch (sortBy) {
+    case "trending":
+      orderBy = { contributor: "desc" };
+      break;
+    case "urgent":
+      orderBy = { collectedAmount: "desc" };
+      break;
+    case "ending-soon":
+      orderBy = { endDate: "asc" };
+      break;
+    case "recent":
+    default:
+      orderBy = { createdAt: "desc" };
+  }
 
   const [data, total] = await prisma.$transaction([
     prisma.campaign.findMany({
@@ -126,7 +158,7 @@ const getAllCampaigns = async (
         itemDonations: true,
         translations: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
       skip,
       take: limit,
     }),

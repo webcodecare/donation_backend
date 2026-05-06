@@ -29,7 +29,15 @@ const createCampaign = catchAsync(async (req, res) => {
 
 const getAllCampaigns = catchAsync(async (req, res) => {
   const pagination = parsePagination(req.query);
-  const { data, meta } = await CampaignService.getAllCampaigns(pagination);
+  const category =
+    typeof req.query.category === "string" ? req.query.category : undefined;
+  const sortBy =
+    typeof req.query.sortBy === "string" ? req.query.sortBy : undefined;
+
+  const { data, meta } = await CampaignService.getAllCampaigns(pagination, {
+    category,
+    sortBy,
+  });
 
   sendResponse(res, {
     success: true,
